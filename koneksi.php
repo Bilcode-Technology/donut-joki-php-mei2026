@@ -14,6 +14,14 @@ $options = [
 
 try {
      $pdo = new PDO($dsn, $user, $pass, $options);
+     // Auto-create users table if it doesn't exist
+     $pdo->exec("CREATE TABLE IF NOT EXISTS `users` (
+         `id` INT AUTO_INCREMENT PRIMARY KEY,
+         `username` VARCHAR(150) NOT NULL UNIQUE,
+         `password` VARCHAR(255) NOT NULL,
+         `role` VARCHAR(50) DEFAULT 'customer',
+         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 } catch (\PDOException $e) {
      throw new \PDOException($e->getMessage(), (int)$e->getCode());
 }

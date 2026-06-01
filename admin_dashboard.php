@@ -131,6 +131,13 @@ $pending_reviews = array_filter($reviews, fn($r) => ($r['status'] ?? 'pending') 
 $buku_tamu = $pdo->query("SELECT * FROM buku_tamu ORDER BY waktu_kunjungan DESC")->fetchAll();
 $orders = $pdo->query("SELECT * FROM orders ORDER BY id DESC")->fetchAll();
 
+// Hitung Pendapatan Bulanan (Total dari pesanan dengan status 'Selesai' pada bulan ini)
+$current_month = date('Y-m');
+$rev_stmt = $pdo->prepare("SELECT SUM(total_harga) AS total FROM orders WHERE DATE_FORMAT(created_at, '%Y-%m') = ? AND status = 'Selesai'");
+$rev_stmt->execute([$current_month]);
+$revenue_res = $rev_stmt->fetch();
+$monthly_revenue = $revenue_res['total'] ?? 0;
+
 // Ambil data promo harian
 $promo_data = $pdo->query("SELECT judul_promo FROM daily_promos LIMIT 1")->fetch();
 $text_promo = $promo_data ? $promo_data['judul_promo'] : 'Diskon Opening 50% All Variant!';
@@ -394,13 +401,13 @@ $text_promo = $promo_data ? $promo_data['judul_promo'] : 'Diskon Opening 50% All
                 <div class="tab-pane fade show active" id="menu-ringkasan" role="tabpanel">
                     <h3 class="fw-bold mb-4" style="color: var(--cokelat)">📊 Ringkasan Dashboard Utama</h3>
                     <div class="row g-4">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="card-custom text-center border-top border-5 border-primary">
                                 <h6 class="text-muted fw-bold">TOTAL VARIAN MENU</h6>
                                 <h1 class="display-5 fw-bold text-primary"><?= count($products) ?></h1>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="card-custom text-center border-top border-5 border-warning">
                                 <h6 class="text-muted fw-bold">ULASAN PELANGGAN</h6>
                                 <h1 class="display-5 fw-bold text-warning"><?= count($reviews) ?></h1>
@@ -409,10 +416,17 @@ $text_promo = $promo_data ? $promo_data['judul_promo'] : 'Diskon Opening 50% All
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="card-custom text-center border-top border-5 border-info">
                                 <h6 class="text-muted fw-bold">PENGGUNA AKTIF</h6>
                                 <h1 class="display-5 fw-bold text-warning"><?= count($buku_tamu) ?></h1>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card-custom text-center border-top border-5 border-success">
+                                <h6 class="text-muted fw-bold">PENDAPATAN BULANAN</h6>
+                                <h1 class="display-6 fw-bold text-success" style="font-size: 1.6rem; word-break: break-all; margin: 15px 0;">Rp <?= number_format($monthly_revenue, 0, ',', '.') ?></h1>
+                                <span class="badge bg-success">Bulan ini (Pesanan Selesai)</span>
                             </div>
                         </div>
                     </div>

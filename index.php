@@ -2,57 +2,95 @@
 session_start();
 require_once 'koneksi.php';
 
-// Proteksi Login Sederhana demi keamanan Session Keranjang
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$user_id = $_SESSION['user_id'];
+// Proteksi Login Sederhana dihilangkan agar pengunjung bebas melihat etalase web
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 
 /* --- LOGIKA BACK-END (Proses Keranjang VIA AJAX & MANUAL) --- */
 if (isset($_GET['action'])) {
     // 1. Tambah ke keranjang
     if ($_GET['action'] == 'add_to_cart' && isset($_GET['p_id'])) {
-        $p_id = $_GET['p_id'];
+        $p_id = (int)$_GET['p_id'];
         
-        // Cek apakah item sudah ada
-        $check = $pdo->prepare("SELECT id, kuantitas FROM cart WHERE user_id = ? AND product_id = ?");
-        $check->execute([$user_id, $p_id]);
-        $cart_item = $check->fetch();
+        if ($user_id) {
+            // Cek apakah item sudah ada di database
+            $check = $pdo->prepare("SELECT id, kuantitas FROM cart WHERE user_id = ? AND product_id = ?");
+            $check->execute([$user_id, $p_id]);
+            $cart_item = $check->fetch();
 
-        if ($cart_item) {
-            $update = $pdo->prepare("UPDATE cart SET kuantitas = kuantitas + 1 WHERE id = ?");
-            $update->execute([$cart_item['id']]);
+            if ($cart_item) {
+                $update = $pdo->prepare("UPDATE cart SET kuantitas = kuantitas + 1 WHERE id = ?");
+                $update->execute([$cart_item['id']]);
+            } else {
+                $insert = $pdo->prepare("INSERT INTO cart (user_id, product_id, kuantitas) VALUES (?, ?, 1)");
+                $insert->execute([$user_id, $p_id]);
+            }
         } else {
-            $insert = $pdo->prepare("INSERT INTO cart (user_id, product_id, kuantitas) VALUES (?, ?, 1)");
-            $insert->execute([$user_id, $p_id]);
+            // Guest session-based cart
+            if (!isset($_SESSION['guest_cart'])) {
+                $_SESSION['guest_cart'] = [];
+            }
+            if (isset($_SESSION['guest_cart'][$p_id])) {
+                $_SESSION['guest_cart'][$p_id]++;
+            } else {
+                $_SESSION['guest_cart'][$p_id] = 1;
+            }
         }
-        header("Location: index.php#katalog"); exit;
+        
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            // Jangan redirect jika AJAX request
+        } else {
+            header("Location: index.php#katalog"); exit;
+        }
     }
     
     // 2. Aksi Update Kuantitas di Sidebar (+ / - / hapus)
     if ($_GET['action'] == 'update_cart' && isset($_GET['c_id']) && isset($_GET['op'])) {
         $c_id = $_GET['c_id'];
-        if ($_GET['op'] == 'plus') {
-            $pdo->prepare("UPDATE cart SET kuantitas = kuantitas + 1 WHERE id = ? AND user_id = ?")->execute([$c_id, $user_id]);
-        } elseif ($_GET['op'] == 'minus') {
-            $pdo->prepare("UPDATE cart SET kuantitas = IF(kuantitas > 1, kuantitas - 1, 1) WHERE id = ? AND user_id = ?")->execute([$c_id, $user_id]);
-        } elseif ($_GET['op'] == 'delete') {
-            $pdo->prepare("DELETE FROM cart WHERE id = ? AND user_id = ?")->execute([$c_id, $user_id]);
+        $op = $_GET['op'];
+        
+        if (str_starts_with($c_id, 'guest_')) {
+            $p_id = (int)str_replace('guest_', '', $c_id);
+            if (!isset($_SESSION['guest_cart'])) {
+                $_SESSION['guest_cart'] = [];
+            }
+            if ($op == 'plus') {
+                $_SESSION['guest_cart'][$p_id] = ($_SESSION['guest_cart'][$p_id] ?? 0) + 1;
+            } elseif ($op == 'minus') {
+                if (isset($_SESSION['guest_cart'][$p_id])) {
+                    $_SESSION['guest_cart'][$p_id] = max(1, $_SESSION['guest_cart'][$p_id] - 1);
+                }
+            } elseif ($op == 'delete') {
+                unset($_SESSION['guest_cart'][$p_id]);
+            }
+        } else {
+            if ($user_id) {
+                if ($op == 'plus') {
+                    $pdo->prepare("UPDATE cart SET kuantitas = kuantitas + 1 WHERE id = ? AND user_id = ?")->execute([$c_id, $user_id]);
+                } elseif ($op == 'minus') {
+                    $pdo->prepare("UPDATE cart SET kuantitas = IF(kuantitas > 1, kuantitas - 1, 1) WHERE id = ? AND user_id = ?")->execute([$c_id, $user_id]);
+                } elseif ($op == 'delete') {
+                    $pdo->prepare("DELETE FROM cart WHERE id = ? AND user_id = ?")->execute([$c_id, $user_id]);
+                }
+            }
         }
-        header("Location: index.php"); exit;
+        
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            // Jangan redirect jika AJAX request
+        } else {
+            header("Location: index.php"); exit;
+        }
     }
 }
 
-// FITUR BARU: PROSES KIRIM ULASAN MANIS (SUDAH DISSELARASKAN)
+// FITUR BARU: PROSES KIRIM ULASAN MANIS
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['submit_review']) || isset($_POST['kirim_ulasan']))) {
     $nama = isset($_POST['nama']) ? trim($_POST['nama']) : trim($_POST['nama_pelanggan']);
     $ulasan = isset($_POST['ulasan']) ? trim($_POST['ulasan']) : trim($_POST['komentar']);
     $rating = isset($_POST['rating']) ? (int)$_POST['rating'] : 5; 
     
+    $ins_user_id = $user_id ? $user_id : 1;
     $ins_rev = $pdo->prepare("INSERT INTO reviews (user_id, nama_pelanggan, rating, komentar, status) VALUES (?, ?, ?, ?, 'pending')");
-    $ins_rev->execute([$user_id, $nama, $rating, $ulasan]);
+    $ins_rev->execute([$ins_user_id, $nama, $rating, $ulasan]);
     header("Location: index.php#ulasan"); 
     exit;
 }
@@ -62,14 +100,30 @@ $promos = $pdo->query("SELECT judul_promo FROM daily_promos WHERE status_aktif =
 $products = $pdo->query("SELECT * FROM products ORDER BY id DESC")->fetchAll();
 $reviews = $pdo->query("SELECT * FROM reviews WHERE status = 'approved' ORDER BY id DESC")->fetchAll();
 
-// Ambil isi keranjang user aktif beserta hitungan total badge
-$cart_stmt = $pdo->prepare("SELECT c.id as cart_id, c.kuantitas, p.* FROM cart c JOIN products p ON c.product_id = p.id WHERE c.user_id = ?");
-$cart_stmt->execute([$user_id]);
-$cart_items = $cart_stmt->fetchAll();
+// Ambil isi keranjang user aktif/tamu beserta hitungan total badge
+$cart_items = [];
+if ($user_id) {
+    $cart_stmt = $pdo->prepare("SELECT c.id as cart_id, c.kuantitas, p.* FROM cart c JOIN products p ON c.product_id = p.id WHERE c.user_id = ?");
+    $cart_stmt->execute([$user_id]);
+    $cart_items = $cart_stmt->fetchAll();
+} else {
+    // Guest cart from session
+    if (isset($_SESSION['guest_cart']) && !empty($_SESSION['guest_cart'])) {
+        $guest_ids = array_keys($_SESSION['guest_cart']);
+        $placeholders = implode(',', array_fill(0, count($guest_ids), '?'));
+        $stmt_guest = $pdo->prepare("SELECT * FROM products WHERE id IN ($placeholders)");
+        $stmt_guest->execute($guest_ids);
+        $products_data = $stmt_guest->fetchAll();
+        foreach ($products_data as $p) {
+            $p_id = $p['id'];
+            $cart_items[] = array_merge($p, [
+                'cart_id' => 'guest_' . $p_id,
+                'kuantitas' => $_SESSION['guest_cart'][$p_id]
+            ]);
+        }
+    }
+}
 
-// =========================================================
-// BAGIAN INI YANG DIPERBAIKI BIAR TIDAK EROR LAGI:
-// =========================================================
 $total_badge = 0;
 $total_belanja = 0; // Nilai awal wajib 0 biar aman saat keranjang kosong
 
@@ -140,12 +194,18 @@ if (!empty($cart_items)) {
     <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#modalKontakGemas">Kontak</a>
 </li>
 </ul>
-            <div class="d-flex justify-content-center gap-2 align-items-center ms-auto">
+            <div class="d-flex justify-content-center gap-3 align-items-center ms-auto">
                 <button class="btn btn-light position-relative border-0 p-1" data-bs-toggle="offcanvas" data-bs-target="#sidebarCart" style="background: none; font-size: 1.4rem;">
                     🛒 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white fs-6 id-cart-badge"><?=$total_badge?></span>
                 </button>
                 <a href="admin_dashboard.php" class="btn btn-link text-decoration-none fw-bold small px-2" style="color: #6C4A4A;">Admin 👑</a>
-                <a href="login.php" class="btn btn-outline-danger btn-sm rounded-pill px-3">🚪 Keluar</a>
+                <?php if ($user_id): ?>
+                    <span class="small fw-bold text-muted d-none d-md-inline">Halo, <?= htmlspecialchars($_SESSION['username']) ?>! 🧸</span>
+                    <a href="logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3">🚪 Keluar</a>
+                <?php else: ?>
+                    <a href="login.php" class="btn btn-outline-danger btn-sm rounded-pill px-3" style="border-color: var(--accent-pink); color: var(--accent-pink-dark);">🔑 Masuk</a>
+                    <a href="login.php?tab=register" class="btn btn-kawaii btn-sm rounded-pill px-3 text-white" style="font-size: 0.8rem; padding: 6px 15px; box-shadow: none;">📝 Daftar</a>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -215,7 +275,7 @@ if (!empty($cart_items)) {
     </div>
 </section>
 
-<section id="tentang" class="py-5 my-5 container position-relative overflow-hidden" style="background: linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 100%); border-radius: 40px; border: 4px dashed #FFB6C1; box-shadow: 0 15px 35px rgba(255,182,193,0.3);">
+<section id="tentang" class="py-5 my-5 container position-relative overflow-hidden scroll-reveal" style="background: linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 100%); border-radius: 40px; border: 4px dashed #FFB6C1; box-shadow: 0 15px 35px rgba(255,182,193,0.3);">
     
     <div class="position-absolute" style="top: 8%; left: 4%; font-size: 1.8rem; opacity: 0.7; animation: float 3s ease-in-out infinite;">✨</div>
     <div class="position-absolute" style="top: 15%; right: 5%; font-size: 2rem; opacity: 0.6; animation: float 4s ease-in-out infinite 0.5s;">🌈</div>
@@ -288,7 +348,7 @@ if (!empty($cart_items)) {
 
     </div>
 </section> 
-<section id="faq" class="py-5" style="background-color: var(--cream-pastel);">
+<section id="faq" class="py-5 scroll-reveal" style="background-color: var(--cream-pastel);">
     <div class="container py-4">
         
         <div class="text-center mb-5">
@@ -361,7 +421,7 @@ if (!empty($cart_items)) {
     </div>
 </section>
 
-<section id="katalog" class="container my-5 pt-4">
+<section id="katalog" class="container my-5 pt-4 scroll-reveal">
     <div class="text-center mb-4">
         <h2 class="fw-bold" style="color: #6C4A4A;">✨ Menu Donat Ajaib ✨</h2>
         <p class="text-muted mb-3">Pilih dan saring rasa favoritmu tanpa ribet!</p>
@@ -505,7 +565,7 @@ if (!empty($cart_items)) {
     </div><!-- /productGrid -->
 </section><!-- /katalog -->
 
-<section id="ulasan" class="container my-5 py-5" style="background: radial-gradient(#FFE5EC 12%, transparent 12%); background-size: 30px 30px;">
+<section id="ulasan" class="container my-5 py-5 scroll-reveal" style="background: radial-gradient(#FFE5EC 12%, transparent 12%); background-size: 30px 30px;">
     
     <div class="text-center mb-5">
         <h2 class="fw-bold" style="color: #6C4A4A; font-family: 'Comic Sans MS', cursive, sans-serif; text-shadow: 2px 2px 0 #FFF;">
@@ -626,7 +686,7 @@ if (!empty($cart_items)) {
     </div>
 </section>
 
-<section id="info-toko" class="py-5" style="background-color: var(--cream-pastel); border-top: 4px dashed var(--pink-pastel);">
+<section id="info-toko" class="py-5 scroll-reveal" style="background-color: var(--cream-pastel); border-top: 4px dashed var(--pink-pastel);">
     <div class="container">
         
         <div class="text-center mb-5">
@@ -924,6 +984,159 @@ document.addEventListener("DOMContentLoaded", function () {
             menuLinks.forEach(item => item.classList.remove('active-warna'));
             this.classList.add('active-warna');
         });
+    });
+
+    // Intersection Observer for Scroll Reveal
+    const reveals = document.querySelectorAll('.scroll-reveal');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('reveal-active');
+            }
+        });
+    }, {
+        threshold: 0.05,
+        rootMargin: "0px 0px -40px 0px"
+    });
+    reveals.forEach(el => observer.observe(el));
+
+    // Toast Notification Helper
+    window.showKawaiiToast = function(message) {
+        let container = document.querySelector('.kawaii-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'kawaii-toast-container';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = 'kawaii-toast';
+        toast.innerHTML = `✨ <span>${message}</span> 🍩`;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutToast 0.4s ease forwards';
+            setTimeout(() => {
+                toast.remove();
+                if (container.children.length === 0) {
+                    container.remove();
+                }
+            }, 400);
+        }, 2600);
+    }
+
+    // AJAX Add to Cart
+    document.addEventListener('click', function(e) {
+        const addBtn = e.target.closest('a[href*="action=add_to_cart"]');
+        if (addBtn) {
+            e.preventDefault();
+            const href = addBtn.getAttribute('href');
+            
+            fetch(href, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Network error");
+                return res.text();
+            })
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Update badge
+                const newBadge = doc.querySelector('.id-cart-badge');
+                if (newBadge) {
+                    document.querySelectorAll('.id-cart-badge').forEach(b => {
+                        b.innerText = newBadge.innerText;
+                    });
+                }
+                
+                // Update sidebar list
+                const newCartList = doc.getElementById('wa_list_produk');
+                const oldCartList = document.getElementById('wa_list_produk');
+                if (newCartList && oldCartList) {
+                    oldCartList.innerHTML = newCartList.innerHTML;
+                }
+                
+                // Update total html
+                const newTotal = doc.getElementById('wa_total_html');
+                const oldTotal = document.getElementById('wa_total_html');
+                if (newTotal && oldTotal) {
+                    oldTotal.innerHTML = newTotal.innerHTML;
+                }
+                
+                // Close active product modal if clicked in modal
+                const modalEl = addBtn.closest('.modal');
+                if (modalEl) {
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                }
+                
+                showKawaiiToast("Donat ter-imut berhasil masuk keranjang! 💖");
+            })
+            .catch(err => {
+                console.error("Cart error:", err);
+                showKawaiiToast("Duh gagal, silakan coba lagi ya Kak! 🥺");
+            });
+        }
+    });
+
+    // AJAX Update Cart (+ / - / delete)
+    document.addEventListener('click', function(e) {
+        const updateBtn = e.target.closest('a[href*="action=update_cart"]');
+        if (updateBtn) {
+            e.preventDefault();
+            
+            // Confirm delete if the delete button was clicked
+            if (updateBtn.getAttribute('onclick')) {
+                if (!confirm("Hapus donat ini dari keranjang? 🥺")) {
+                    return;
+                }
+            }
+            
+            const href = updateBtn.getAttribute('href');
+            fetch(href, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Network error");
+                return res.text();
+            })
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Update badge
+                const newBadge = doc.querySelector('.id-cart-badge');
+                if (newBadge) {
+                    document.querySelectorAll('.id-cart-badge').forEach(b => {
+                        b.innerText = newBadge.innerText;
+                    });
+                }
+                
+                // Update sidebar list
+                const newCartList = doc.getElementById('wa_list_produk');
+                const oldCartList = document.getElementById('wa_list_produk');
+                if (newCartList && oldCartList) {
+                    oldCartList.innerHTML = newCartList.innerHTML;
+                }
+                
+                // Update total html
+                const newTotal = doc.getElementById('wa_total_html');
+                const oldTotal = document.getElementById('wa_total_html');
+                if (newTotal && oldTotal) {
+                    oldTotal.innerHTML = newTotal.innerHTML;
+                }
+            })
+            .catch(err => {
+                console.error("Cart update error:", err);
+            });
+        }
     });
 });
 </script>
