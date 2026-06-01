@@ -1,0 +1,452 @@
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Outfit:wght@300..800&family=Quicksand:wght@400..700&display=swap');
+
+:root {
+    --pink-pastel: #FFE5EC;
+    --yellow-pastel: #FFF5D6;
+    --mint-pastel: #E8F5E9;
+    --blue-pastel: #E0F7FA;
+    --cream-pastel: #FFFDF9;
+    --text-color: #5D4037;
+    --accent-pink: #FF8FAB;
+    --accent-pink-dark: #FB6F92;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --border-color: rgba(255, 143, 171, 0.2);
+}
+
+/* --- PREMIUM SCROLLBAR --- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: var(--cream-pastel);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--pink-pastel);
+    border-radius: 10px;
+    border: 2px solid var(--cream-pastel);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-pink);
+}
+
+body {
+    font-family: 'Outfit', 'Fredoka', sans-serif;
+    background-color: var(--cream-pastel);
+    color: var(--text-color);
+    overflow-x: hidden;
+    background-image: radial-gradient(rgba(255, 143, 171, 0.05) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand {
+    font-family: 'Fredoka', sans-serif;
+    color: var(--accent-pink-dark);
+}
+
+/* --- GLASSMORPHISM CARD --- */
+.glass-card {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 15px 35px rgba(255, 143, 171, 0.08);
+    border-radius: 25px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(255, 143, 171, 0.15);
+    border-color: rgba(255, 143, 171, 0.4);
+}
+
+/* --- ANIMASI KEYFRAMES --- */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes soft-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes bg-gradient-move {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- SELEKTOR GLOBAL KUSTOM --- */
+.kawaii-float {
+    animation: float 4s ease-in-out infinite;
+}
+
+.kawaii-rotate-hover {
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.kawaii-rotate-hover:hover {
+    transform: scale(1.15) rotate(15deg);
+}
+
+.btn-kawaii {
+    background: linear-gradient(135deg, var(--accent-pink) 0%, var(--accent-pink-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 28px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 6px 0px #E05374;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-kawaii:hover {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0px #E05374;
+    filter: brightness(1.05);
+    color: white;
+}
+
+.btn-kawaii:active {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0px #E05374;
+}
+
+/* --- LOGIN STYLE --- */
+.login-body {
+    background: linear-gradient(-45deg, #FFE5EC, #FFF5D6, #E8F5E9, #E0F7FA);
+    background-size: 400% 400%;
+    animation: bg-gradient-move 12s ease infinite;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    border-radius: 35px;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 20px 50px rgba(255, 143, 171, 0.18);
+    transition: all 0.3s ease;
+}
+
+.login-card:hover {
+    box-shadow: 0 25px 60px rgba(255, 143, 171, 0.25);
+    border-color: rgba(255, 143, 171, 0.3);
+}
+
+.login-input {
+    border: 2px solid var(--pink-pastel);
+    border-radius: 30px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-color);
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.login-input:focus {
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 0 4px rgba(255, 143, 171, 0.2);
+    outline: none;
+}
+
+/* --- NAVBAR --- */
+.navbar-kawaii {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 4px dashed var(--accent-pink);
+    border-radius: 0 0 30px 30px;
+    box-shadow: 0 10px 30px rgba(255, 143, 171, 0.06);
+}
+
+/* --- BANNER --- */
+.marquee-promo {
+    border-bottom: 3px dashed var(--accent-pink-dark) !important;
+    border-top: 3px dashed var(--accent-pink-dark) !important;
+    background-color: var(--yellow-pastel);
+    font-weight: 700;
+    padding: 10px 0;
+    color: var(--text-color);
+}
+
+/* --- CARDS PRODUCT --- */
+.donut-card {
+    border: 3px solid var(--pink-pastel);
+    border-radius: 30px;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FFFDF9 100%);
+    box-shadow: 0 12px 24px rgba(108, 74, 74, 0.04);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    position: relative;
+}
+
+.donut-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 22px 40px rgba(255, 143, 171, 0.2);
+    border-color: var(--accent-pink);
+}
+
+/* FLAVOR SPECIFIC GLOW EFFECT */
+.donut-card.matcha-glow:hover {
+    box-shadow: 0 22px 40px rgba(163, 201, 168, 0.35);
+    border-color: #A3C9A8;
+}
+.donut-card.choco-glow:hover {
+    box-shadow: 0 22px 40px rgba(139, 90, 43, 0.25);
+    border-color: #8B5A2B;
+}
+.donut-card.strawberry-glow:hover {
+    box-shadow: 0 22px 40px rgba(255, 105, 180, 0.35);
+    border-color: #FF69B4;
+}
+.donut-card.redvelvet-glow:hover {
+    box-shadow: 0 22px 40px rgba(178, 34, 34, 0.25);
+    border-color: #B22222;
+}
+
+.donut-img-container {
+    background-color: var(--mint-pastel);
+    border-radius: 24px;
+    padding: 22px;
+    margin: 15px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.donut-card:hover .donut-img-container {
+    transform: scale(1.05);
+}
+
+/* --- WAVE DIVIDER --- */
+.wave-container {
+    position: relative;
+    background: var(--pink-pastel);
+    color: var(--text-color);
+    padding: 60px 0;
+}
+
+/* --- OFFCANVAS CART --- */
+.offcanvas-kawaii {
+    background-color: var(--cream-pastel);
+    border-left: 5px dashed var(--accent-pink);
+    border-radius: 30px 0 0 30px;
+}
+
+/* ==========================================================================
+   ANIMASI DEKORASI HALAMAN UTAMA (BERANDA)
+   ========================================================================== */
+.decoration-item {
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+    filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.06));
+}
+
+.item-star-1 {
+    top: 15%;
+    left: 15%;
+    animation: bounceSpin 4s ease-in-out infinite alternate;
+}
+
+.item-candy {
+    top: 10%;
+    right: 15%;
+    animation: orbitFloat 5s ease-in-out infinite;
+}
+
+.item-cookie {
+    bottom: 15%;
+    right: 15%;
+    animation: bounceSpin 6s ease-in-out infinite alternate-reverse;
+}
+
+.item-icecream {
+    bottom: 15%;
+    left: 15%;
+    animation: orbitFloat 7s ease-in-out infinite reverse;
+}
+
+.item-sparkle {
+    top: -5%;
+    left: 48%;
+    animation: pulseTwinkle 3s ease-in-out infinite;
+}
+
+/* --- DAFTAR KEYFRAMES GERAKAN --- */
+@keyframes orbitFloat {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(45deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes bounceSpin {
+    0% { transform: translateY(0px) scale(1) rotate(-10deg); }
+    100% { transform: translateY(-20px) scale(1.15) rotate(20deg); }
+}
+
+@keyframes pulseTwinkle {
+    0%, 100% { transform: scale(0.8) opacity(0.5); }
+    50% { transform: scale(1.2) opacity(1); }
+}
+
+/* ==========================================================================
+   STYLE BOX PROMO KATALOG
+   ========================================================================== */
+.katalog-marquee-box {
+    background-color: var(--yellow-pastel);
+    border: 3px dashed var(--accent-pink-dark);
+    border-radius: 50px;
+    padding: 8px 25px;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   NAVBAR MENU LINK ACTIVE EFFECT
+   ========================================================================== */
+.navbar-kawaii .navbar-nav .nav-link {
+    color: var(--text-color) !important;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.navbar-kawaii .navbar-nav .nav-link:hover {
+    color: var(--accent-pink-dark) !important;
+    background-color: var(--pink-pastel);
+}
+
+.navbar-kawaii .navbar-nav .nav-link.active-warna {
+    color: white !important;
+    background-color: var(--accent-pink-dark);
+    font-weight: 700 !important;
+    box-shadow: 0 4px 10px rgba(251, 111, 146, 0.25);
+}
+
+/* ==========================================================================
+   STYLE FAQ BOX KAWAII
+   ========================================================================== */
+.faq-card {
+    background-color: white !important;
+    border: 3px solid rgba(255, 143, 171, 0.15) !important;
+    border-radius: 25px !important;
+    box-shadow: 0 8px 20px rgba(108, 74, 74, 0.03) !important;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.faq-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent-pink) !important;
+    box-shadow: 0 15px 30px rgba(255, 143, 171, 0.12) !important;
+}
+
+.faq-btn {
+    font-family: 'Fredoka', sans-serif !important;
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+    font-size: 1.05rem;
+    background-color: white !important;
+    padding: 20px 25px !important;
+    border: none !important;
+    transition: all 0.2s ease;
+}
+
+.faq-btn:not(.collapsed) {
+    color: var(--accent-pink-dark) !important;
+    background-color: var(--pink-pastel) !important;
+    box-shadow: none !important;
+}
+
+.faq-answer {
+    font-family: 'Outfit', sans-serif !important;
+    background-color: var(--cream-pastel);
+    color: var(--text-color);
+    line-height: 1.7;
+    font-size: 0.95rem;
+    padding: 22px 25px !important;
+    border-top: 3px dashed var(--pink-pastel) !important;
+}
+
+/* ==========================================================================
+   GAYA KOTAK POP-UP KONTAK KAWAII
+   ========================================================================== */
+.kontak-modal-box {
+    border: 4px dashed var(--accent-pink) !important;
+    border-radius: 35px !important;
+    background-color: white !important;
+    box-shadow: 0 20px 50px rgba(255, 143, 171, 0.25) !important;
+}
+
+.kontak-item {
+    background-color: var(--pink-pastel);
+    border-radius: 20px;
+    padding: 20px;
+    border: 2px dashed rgba(255, 143, 171, 0.4);
+}
+
+/* ==========================================================================
+   TIMELINE FOR GUESTBOOK (ADMIN TAB)
+   ========================================================================== */
+.guest-timeline {
+    position: relative;
+    border-left: 3px dashed var(--accent-pink);
+    padding-left: 25px;
+    margin-left: 10px;
+}
+.guest-item {
+    position: relative;
+    margin-bottom: 25px;
+    background: white;
+    padding: 16px 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 143, 171, 0.12);
+    box-shadow: 0 4px 15px rgba(255, 143, 171, 0.02);
+    transition: all 0.25s ease;
+}
+.guest-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 6px 20px rgba(255, 143, 171, 0.06);
+    border-color: rgba(255, 143, 171, 0.3);
+}
+.guest-marker {
+    position: absolute;
+    left: -37px;
+    top: 15px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: white;
+    border: 4px solid var(--accent-pink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.guest-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--pink-pastel);
+    color: var(--accent-pink-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
